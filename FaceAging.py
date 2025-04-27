@@ -735,8 +735,13 @@ class FaceAging(object):
 
         self.test(images, gender_male, 'test_as_male.png')
         self.test(images, gender_female, 'test_as_female.png')
+        # Example of proper indentation
+        if some_condition:
+            print(f'\n\tDone! Results are saved as {os.path.join(self.save_dir, "test", "test_as_xxx.png")}')
+    # some code block
+            
 
-      print(f'\n\tDone! Results are saved as {os.path.join(self.save_dir, "test", "test_as_xxx.png")}')
 
+      
 
 
