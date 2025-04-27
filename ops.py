@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import imageio
 from PIL import Image
+import os
 
 # Convolutional layer
 def conv2d(input_map, num_output_channels, size_kernel=5, stride=2, name='conv2d'):
@@ -43,32 +44,37 @@ def deconv2d(input_map, output_shape, size_kernel=5, stride=2, stddev=0.02, name
 def lrelu(logits, leak=0.2):
     return tf.nn.leaky_relu(logits, alpha=leak)
 
-# Concatenate label information
+# Concatenate label information to input
 def concat_label(x, label, duplicate=1):
-    x_shape = tf.shape(x)
     if duplicate < 1:
         return x
+
     label = tf.tile(label, [1, duplicate])
     if len(x.shape) == 2:
         return tf.concat([x, label], axis=1)
     elif len(x.shape) == 4:
-        label = tf.reshape(label, [-1, 1, 1, label.shape[-1]])
-        ones = tf.ones([x_shape[0], x_shape[1], x_shape[2], label.shape[-1]])
-        label = label * ones
+        batch_size = tf.shape(x)[0]
+        height = tf.shape(x)[1]
+        width = tf.shape(x)[2]
+        label = tf.reshape(label, [batch_size, 1, 1, -1])
+        label = tf.tile(label, [1, height, width, 1])
         return tf.concat([x, label], axis=3)
 
 # Load an image and resize it
 def load_image(
-    image_path, 
-    image_size=64, 
-    image_value_range=(-1, 1), 
+    image_path,
+    image_size=64,
+    image_value_range=(-1, 1),
     is_gray=False
 ):
+    if not os.path.exists(image_path):
+        raise ValueError(f"Image path does not exist: {image_path}")
+
     if is_gray:
-        image = imageio.v2.imread(image_path, as_gray=True).astype(np.float32)
-        image = np.expand_dims(image, axis=-1)  # Expand for grayscale
+        image = imageio.v2.imread(image_path, as_gray=True)
+        image = np.expand_dims(image, axis=-1)  # (H, W, 1)
     else:
-        image = imageio.v2.imread(image_path).astype(np.float32)
+        image = imageio.v2.imread(image_path)
 
     image = Image.fromarray(np.uint8(image))
     image = image.resize((image_size, image_size))
@@ -90,7 +96,7 @@ def save_batch_images(
     if size_frame is None:
         auto_size = int(np.ceil(np.sqrt(images.shape[0])))
         size_frame = [auto_size, auto_size]
-    
+
     img_h, img_w = batch_images.shape[1], batch_images.shape[2]
     num_channels = batch_images.shape[3]
     frame = np.zeros((img_h * size_frame[0], img_w * size_frame[1], num_channels))
@@ -105,7 +111,10 @@ def save_batch_images(
         ] = image
 
     frame = np.clip(frame * 255.0, 0, 255).astype(np.uint8)
+
+    # Save the final frame
     imageio.v2.imwrite(save_path, frame)
+
 
 
 
