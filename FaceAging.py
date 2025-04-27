@@ -708,7 +708,7 @@ class FaceAging(object):
         num_samples = int(np.sqrt(self.size_batch))
         file_names = glob(testing_samples_dir)
         if len(file_names) < num_samples:
-            print 'The number of testing images is must larger than %d' % num_samples
+            print("The number of testing images must be larger than %d" % num_samples)
             exit(0)
         sample_files = file_names[0:num_samples]
         sample = [load_image(
